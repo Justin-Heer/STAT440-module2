@@ -32,6 +32,26 @@ class CustomImputer(BaseEstimator, TransformerMixin):
 
         return X
 
+
+class z02Imputer(BaseEstimator, TransformerMixin):
+    '''
+    Takes erroneous z02 values 7 and replaces with 1
+    '''
+
+    def __init__(self):
+        None
+
+    def fit(self, y):
+        return self
+
+    def transform(self, y):
+        print("\n transform called in, ",self)
+        inx = y.loc[:,'Z02'] == 7
+        y.loc[inx,'Z02'] = 1
+
+        return y
+        
+
 # Import data
 
 
@@ -57,17 +77,20 @@ X_pipeline = Pipeline(steps = X_pipeline_steps)
 Xtrain[:] = X_pipeline.fit_transform(Xtrain)
 Xval[:] = X_pipeline.transform(Xval)
 
-Y_pipeline_steps = [('simple imputer', SimpleImputer(copy=False))]
+Y_pipeline_steps = [('z02Imputer', z02Imputer()),
+                    ('simple imputer', SimpleImputer(copy=False)),
+                    ]
 Y_pipeline = Pipeline(steps=Y_pipeline_steps)
 Ytrain[:] = Y_pipeline.fit_transform(Ytrain)
 Yval[:] = Y_pipeline.transform(Yval)
 
 Xtest[:] = X_pipeline.transform(Xtest)
 
-Xtrain.to_csv('Xtrain-processed.txt')
-Xval.to_csv('Xval-processed.txt')
-Ytrain.to_csv('Ytrain-processed.txt')
-Yval.to_csv('Yval-processed.txt')
-Xtest.to_csv('Xtest-processed.txt')
+
+Xtrain.to_csv('processed-data\\Xtrain-processed.txt')
+Xval.to_csv('processed-data\\Xval-processed.txt')
+Ytrain.to_csv('processed-data\\Ytrain-processed.txt')
+Yval.to_csv('processed-data\\Yval-processed.txt')
+Xtest.to_csv('processed-data\\Xtest-processed.txt')
 
 

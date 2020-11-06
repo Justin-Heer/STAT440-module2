@@ -12,31 +12,55 @@ import pandas as pd
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error
 
+
 # Import data
+key = 'Z01'
+print("Importing Data")
 
 Xtrain = pd.read_csv('processed-data\\Xtrain-processed.txt', index_col='Id')
 Xval = pd.read_csv('processed-data\\Xval-processed.txt', index_col='Id')
-Xtest = pd.read_csv('processed-data\\Xtest-processed.txt', index_col='Id')
+
 
 Ytrain = pd.read_csv('processed-data\\Ytrain-processed.txt',
-                     index_col='Id').loc[:, 'Z01']
-Yval = pd.read_csv('processed-data\\Yval-processed.txt').loc[:, 'Z01']
+                     index_col='Id').loc[:, key]
+Yval = pd.read_csv('processed-data\\Yval-processed.txt').loc[:, key]
+
 
 # Select columns
 corrs = Xtrain.corrwith(Ytrain)
 feature_cols = corrs.sort_values(ascending=False)[0:14].index
 
 Xtrain = Xtrain.loc[:, feature_cols]
+Xval = Xval.loc[:, feature_cols]
+# Model fit
+print("Fitting model")
 
-# Model training
+model = RandomForestRegressor(n_estimators=50, verbose=1, n_jobs=4)
 
-print("Model Initialization \n")
-rfr = RandomForestRegressor(n_estimators=10, verbose=1)
+model.fit(Xtrain, Ytrain)
 
-print("Model fit")
-rfr.fit(Xtrain, Ytrain)
+Ypred = model.predict(Xval.loc[:, feature_cols])
 
-Ypred = rfr.predict(Xval.loc[:, feature_cols])
+# Ask if test predictions need to be generated
+while True:
+    ans = input("\n Do you want to produce test set predictions (y/n)?   => ")
+    try:
+        ans = str(ans)
+    except ValueError:
+        print("\n Not a letter")
+        continue
+    if ans == 'y' or ans == 'n':
+        break
+    else:
+        print('\n enter (y/n)')
 
-mean_absolute_error(Yval, Ypred)
 
+if ans == 'y':
+    Xtest = pd.read_csv('processed-data\\Xtest-processed.txt', index_col='Id')
+    Xtest = Xtest.loc[:, feature_cols]
+
+    testPred = pd.DataFrame(model.predict(Xtest), index=Xtest.index,
+                            columns=['value'])
+    testPred.to_csv("recent-predictions\\"+key+".txt")
+
+print(' done')
