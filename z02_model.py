@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Nov  3 20:29:26 2020
+Created on Thu Nov  5 18:18:39 2020
 
 @author: Justin
-z02 response variable model, this variable is a binary classification variable
+
+Model training Z09
+
 
 """
-
-
-# Imports
-
 import pandas as pd
 
-from sklearn.svm import SVC
-from sklearn.metrics import classification_report
+import xgboost as xgb
+from sklearn.metrics import accuracy_score
+
 
 # Import data
 key = 'Z02'
@@ -30,18 +29,40 @@ Yval = pd.read_csv('processed-data\\Yval-processed.txt').loc[:, key]
 
 # Select columns
 corrs = Xtrain.corrwith(Ytrain)
-feature_cols = corrs.sort_values(ascending=False)[0:14].index
+feature_cols = corrs.sort_values(ascending=False)[0:50].index
 
 Xtrain = Xtrain.loc[:, feature_cols]
 Xval = Xval.loc[:, feature_cols]
+
+dtrain = xgb.DMatrix(Xtrain, label=Ytrain)
+dval = xgb.DMatrix(Xval, label=Yval)
+
 # Model fit
 print("Fitting model")
 
-model = SVC(kernel='sigmoid')
+model_params = {'objective': 'binary:hinge',
+                'lambda': 100,
+                'max_depth': 1200,
+                'min_child_weight': 55,
+                'eta': 0.2,
+                'gamma':10
+                }
 
-model.fit(Xtrain, Ytrain)
 
-Ypred = model.predict(Xval)
+model_params['nthread'] = 4
+model_params['eval_metric'] = 'auc'
+evallist = [(dtrain, 'train'), (dval, 'eval')]
+
+num_rounds = 100
+
+model = xgb.train(model_params, dtrain, num_rounds, evallist,
+                  early_stopping_rounds=30, verbose_eval=True)
+
+
+num_rounds = model.best_ntree_limit
+Ypred = model.predict(dval, ntree_limit=model.best_ntree_limit)
+
+print("Acc_score=  {}".format(accuracy_score(Yval, Ypred)))
 
 while True:
     ans = input("\n Do you want to produce test set predictions (y/n)?   => ")
@@ -57,10 +78,23 @@ while True:
 
 
 if ans == 'y':
+    Xtrain = pd.read_csv('processed-data\\Xtrain-full-processed.txt',
+                         index_col='Id')
+    Xtrain = Xtrain.loc[:, feature_cols]
+    Ytrain = pd.read_csv('processed-data\\Ytrain-full-processed.txt',
+                         index_col='Id').loc[:, key]
+    dtrain = xgb.DMatrix(Xtrain, label=Ytrain)
+    print("Fitting model")
+    evallist = [(dtrain, 'train')]
+    model = xgb.train(model_params, dtrain, num_rounds, evallist,
+                      verbose_eval=True)
+
     Xtest = pd.read_csv('processed-data\\Xtest-processed.txt', index_col='Id')
     Xtest = Xtest.loc[:, feature_cols]
 
-    testPred = pd.DataFrame(model.predict(Xtest), index=Xtest.index,
+    dtest = xgb.DMatrix(Xtest)
+
+    testPred = pd.DataFrame(model.predict(dtest), index=Xtest.index,
                             columns=['value'])
     testPred.to_csv("recent-predictions\\"+key+".txt")
 

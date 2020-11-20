@@ -36,11 +36,15 @@ Xval = Xval.loc[:, feature_cols]
 # Model fit
 print("Fitting model")
 
-model = RandomForestRegressor(n_estimators=50, verbose=1, n_jobs=4)
+model = RandomForestRegressor(random_state=1,
+                              n_estimators=70,
+                              max_depth=20,
+                              min_samples_split=0.0003)
 
 model.fit(Xtrain, Ytrain)
 
 Ypred = model.predict(Xval.loc[:, feature_cols])
+print("MAE=  {}".format(mean_absolute_error(Yval, Ypred)))
 
 while True:
     ans = input("\n Do you want to produce test set predictions (y/n)?   => ")
@@ -56,6 +60,13 @@ while True:
 
 
 if ans == 'y':
+    Xtrain = pd.read_csv('processed-data\\Xtrain-full-processed.txt',
+                         index_col='Id')
+    Xtrain = Xtrain.loc[:, feature_cols]
+    Ytrain = pd.read_csv('processed-data\\Ytrain-full-processed.txt',
+                         index_col='Id').loc[:, key]
+    print("Fitting model")
+    model.fit(Xtrain, Ytrain)
     Xtest = pd.read_csv('processed-data\\Xtest-processed.txt', index_col='Id')
     Xtest = Xtest.loc[:, feature_cols]
 
