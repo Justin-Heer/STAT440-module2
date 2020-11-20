@@ -14,7 +14,7 @@ import glob
 from pandas import read_csv
 
 # GET SAVE LOCATION
-SAVE_PATH = 'recent-predictions\\kaggle-submission.txt'
+SAVE_PATH = 'best-predictions\\kaggle-submission.txt'
 # Get paths
 zPaths = glob.glob('recent-predictions\\*.txt')
 
@@ -29,10 +29,10 @@ pred_df = dfs[0]
 for inx, df in enumerate(dfs[1:]):
     pred_df[str(inx+2)] = df['value']
 
-columns = ["Z01", "Z02", 'Z03', 'Z04', 'Z06', 'Z07', 'Z08', 'Z09', 'Z10',
-           'Z11', 'Z12', 'Z13', 'Z14']
+columns = ["Z01", "Z02", 'Z03', 'Z04', 'Z05', 'Z06', 'Z07', 'Z08', 'Z09',
+           'Z10', 'Z11', 'Z12', 'Z13', 'Z14']
 
-pred_df.columns = columns[:pred_df.columns.shape[0]]
+pred_df.columns = columns
 
 # Import Ytest-processed
 
